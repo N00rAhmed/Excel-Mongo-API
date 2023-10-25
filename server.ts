@@ -1,4 +1,3 @@
-// server.ts
 import express, { Request, Response } from 'express';
 import { MongoClient } from 'mongodb';
 import cors from 'cors';
@@ -20,16 +19,20 @@ async function connectToMongo() {
     console.error('Error connecting to MongoDB:', err);
   }
 }
-// mongodb+srv://tronn232003:ow3bcTm8yahnrrBF@cluster0.mceoov1.mongodb.net/?retryWrites=true&w=majority
-app.post('/api/upload', async (req: Request, res: Response) => {
-  try {
-    const data = req.body;
 
+app.post("/api/upload", async (req: Request, res: Response) => {
+  try {
     if (!db) {
-        await connectToMongo();
-      }
-      
-    const collection = db.db().collection('excelData');
+      await connectToMongo();
+    }
+
+    const { mongoURI, collectionName, ...data } = req.body;
+
+    if (typeof collectionName !== 'string') {
+      return res.status(400).json({ error: 'Collection Name must be a string' });
+    }
+
+    const collection = db.db().collection(collectionName);
     await collection.insertOne(data);
 
     res.status(200).json({ message: 'Data saved to MongoDB' });
