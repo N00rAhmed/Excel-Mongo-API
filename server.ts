@@ -1,47 +1,48 @@
-import express, { Request, Response } from 'express';
-import { MongoClient } from 'mongodb';
-import cors from 'cors';
+// File: server.js
+
+const express = require('express');
+import { Request, Response } from 'express';
+
+const bodyParser = require('body-parser');
+var cors = require('cors');
+
+const { MongoClient } = require('mongodb');
 
 const app = express();
-const port = process.env.PORT || 4000;
-const mongoURI = process.env.MONGO_URI || '';
+const PORT = 4000;
 
-app.use(express.json());
+app.use(bodyParser.json());
 app.use(cors());
 
-let db: MongoClient;
+// let client = null;
+// let client: MongoClient | null = null;
+let client: typeof MongoClient | null = null;
 
-async function connectToMongo() {
-  try {
-    db = await MongoClient.connect(mongoURI);
-    console.log('Connected to MongoDB');
-  } catch (err) {
-    console.error('Error connecting to MongoDB:', err);
-  }
-}
 
-app.post("/api/upload", async (req: Request, res: Response) => {
+
+app.post('/send-message', async (req: Request, res: Response) => {
   try {
-    if (!db) {
-      await connectToMongo();
+    const { mongoUri, message } = req.body;
+
+    if (!mongoUri || !message) {
+      return res.status(400).json({ error: 'MongoDB URI and message are required' });
     }
 
-    const { mongoURI, collectionName, ...data } = req.body;
-
-    if (typeof collectionName !== 'string') {
-      return res.status(400).json({ error: 'Collection Name must be a string' });
+    if (!client) {
+      client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+      await client.connect();
     }
 
-    const collection = db.db().collection(collectionName);
-    await collection.insertOne(data);
+    const db = client.db();
+    const messagesCollection = db.collection('messages');
 
-    res.status(200).json({ message: 'Data saved to MongoDB' });
-  } catch (err) {
-    console.error('Error uploading data to MongoDB:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    const result = await messagesCollection.insertOne({ text: message });
+    res.status(201).json({ message: 'Message sent to MongoDB collection', insertedId: result.insertedId });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
