@@ -12,7 +12,11 @@ const app = express();
 const PORT = 4000;
 
 app.use(bodyParser.json());
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:3000', // Allow requests from this origin
+  methods: 'GET,POST', // Specify the allowed methods
+}));
 
 // let client = null;
 // let client: MongoClient | null = null;
