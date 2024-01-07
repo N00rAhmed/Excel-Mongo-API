@@ -26,9 +26,9 @@ let client: typeof MongoClient | null = null;
 
 app.post('/send-message', async (req: Request, res: Response) => {
   try {
-    const { mongoUri, message } = req.body;
+    const { mongoUri, excelData } = req.body;
 
-    if (!mongoUri || !message) {
+    if (!mongoUri || !excelData) {
       return res.status(400).json({ error: 'MongoDB URI and message are required' });
     }
 
@@ -39,8 +39,8 @@ app.post('/send-message', async (req: Request, res: Response) => {
 
     const db = client.db();
     const messagesCollection = db.collection('messages');
-
-    const result = await messagesCollection.insertOne({ text: message });
+// insertMany
+    const result = await messagesCollection.insertOne({ text: excelData });
     res.status(201).json({ message: 'Message sent to MongoDB collection', insertedId: result.insertedId });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
